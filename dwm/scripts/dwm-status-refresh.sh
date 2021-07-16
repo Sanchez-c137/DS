@@ -47,10 +47,10 @@ print_volume() {
 	fi
 }
 
-print_mem(){
-	memfree=$(($(grep -m1 'MemAvailable:' /proc/meminfo | awk '{print $2}') / 1024))
-	echo -e "$memfree"
-}
+#print_mem(){
+#	memfree=$(($(grep -m1 'MemAvailable:' /proc/meminfo | awk '{print $2}') / 1024))
+#	echo -e "$memfree"
+#}
 
 print_temp(){
 	test -f /sys/class/thermal/thermal_zone0/temp || return 0
@@ -59,76 +59,132 @@ print_temp(){
 
 #!/bin/bash
 
-get_time_until_charged() {
 
-	# parses acpitool's battery info for the remaining charge of all batteries and sums them up
-	sum_remaining_charge=$(acpitool -B | grep -E 'Remaining capacity' | awk '{print $4}' | grep -Eo "[0-9]+" | paste -sd+ | bc);
+#get_time_until_charged() {
+#	# parses acpitool's battery info for the remaining charge of all batteries and sums them up
+#	sum_remaining_charge=$(acpitool -B | grep -E 'Remaining capacity' | awk '{print $4}' | grep -Eo "[0-9]+" | paste -sd+ | bc);
+#
+#	# finds the rate at which the batteries being drained at
+#	present_rate=$(acpitool -B | grep -E 'Present rate' | awk '{print $4}' | grep -Eo "[0-9]+" | paste -sd+ | bc);
+#
+#	# divides current charge by the rate at which it's falling, then converts it into seconds for `date`
+#	seconds=$(bc <<< "scale = 10; ($sum_remaining_charge / $present_rate) * 3600");
+#
+#	# prettifies the seconds into h:mm:ss format
+#	pretty_time=$(date -u -d @${seconds} +%T);
+#
+#	echo $pretty_time;
+#}
+#
+#get_battery_combined_percent() {
+#
+#	# get charge of all batteries, combine them
+#	total_charge=$(expr $(acpi -b | awk '{print $4}' | grep -Eo "[0-9]+" | paste -sd+ | bc));
+#
+#	# get amount of batteries in the device
+#	battery_number=$(acpi -b | wc -l);
+#
+#	percent=$(expr $total_charge / $battery_number);
+#
+#	echo $percent;
+#}
+#
+#get_battery_charging_status() {
+#
+#	if $(acpi -b | grep --quiet Discharging)
+#	then
+#		echo "😈";
+#	else # acpi can give Unknown or Charging if charging, https://unix.stackexchange.com/questions/203741/lenovo-t440s-battery-status-unknown-but-charging
+#		echo "😉";
+#	fi
+#}
+#
+#
+#
+#print_bat(){
+#	#hash acpi || return 0
+#	#onl="$(grep "on-line" <(acpi -V))"
+#	#charge="$(awk '{ sum += $1 } END { print sum }' /sys/class/power_supply/BAT*/capacity)%"
+#	#if test -z "$onl"
+#	#then
+#		## suspend when we close the lid
+#		##systemctl --user stop inhibit-lid-sleep-on-battery.service
+#		#echo -e "${charge}"
+#	#else
+#		## On mains! no need to suspend
+#		##systemctl --user start inhibit-lid-sleep-on-battery.service
+#		#echo -e "${charge}"
+#	#fi
+#	#echo "$(get_battery_charging_status) $(get_battery_combined_percent)%, $(get_time_until_charged )";
+#	echo "$(get_battery_charging_status) $(get_battery_combined_percent)%, $(get_time_until_charged )";
+#}
 
-	# finds the rate at which the batteries being drained at
-	present_rate=$(acpitool -B | grep -E 'Present rate' | awk '{print $4}' | grep -Eo "[0-9]+" | paste -sd+ | bc);
-
-	# divides current charge by the rate at which it's falling, then converts it into seconds for `date`
-	seconds=$(bc <<< "scale = 10; ($sum_remaining_charge / $present_rate) * 3600");
-
-	# prettifies the seconds into h:mm:ss format
-	pretty_time=$(date -u -d @${seconds} +%T);
-
-	echo $pretty_time;
+dwm_backlight() {
+#	MAX_BRIGHTNESS=$(cat /sys/class/backlight/amdgpu_bl0/max_brightness)
+#	ACTUAL_BRIGHTNESS=$(cat /sys/class/backlight/amdgpu_bl0/actual_brightness)
+	BRIGHTNESS=$(brightnessctl | grep '[0-9][0-9]'%)
+	PERCENT_BRIGHTNESS=${BRIGHTNESS:(-4):3}
+	printf "%s" "$SEP1"
+	printf "%s%" "$PERCENT_BRIGHTNESS"
+	printf "%s\n" "$SEP2"
 }
 
-get_battery_combined_percent() {
+dwm_battery () {
+    # Change BAT1 to whatever your battery is identified as. Typically BAT0 or BAT1
+    CHARGE=$(cat /sys/class/power_supply/BAT1/capacity)
+    STATUS=$(cat /sys/class/power_supply/BAT1/status)
 
-	# get charge of all batteries, combine them
-	total_charge=$(expr $(acpi -b | awk '{print $4}' | grep -Eo "[0-9]+" | paste -sd+ | bc));
-
-	# get amount of batteries in the device
-	battery_number=$(acpi -b | wc -l);
-
-	percent=$(expr $total_charge / $battery_number);
-
-	echo $percent;
+    printf "%s" "$SEP1"
+#    if [ "$IDENTIFIER" = "unicode" ]; then
+        if [ "$STATUS" = "Charging" ]; then
+            printf "%s%%[>>]-" "$CHARGE" #"$STATUS"
+        else
+            printf "%s%%[- +]-" "$CHARGE" #"$STATUS"
+        fi
+#    else
+#        printf "BAT %s%% %s" "$CHARGE" "$STATUS"
+#    fi
+    printf "%s\n" "$SEP2"
 }
 
-get_battery_charging_status() {
-
-	if $(acpi -b | grep --quiet Discharging)
-	then
-		echo "🔋";
-	else # acpi can give Unknown or Charging if charging, https://unix.stackexchange.com/questions/203741/lenovo-t440s-battery-status-unknown-but-charging
-		echo "🔌";
-	fi
-}
-
-
-
-print_bat(){
-	#hash acpi || return 0
-	#onl="$(grep "on-line" <(acpi -V))"
-	#charge="$(awk '{ sum += $1 } END { print sum }' /sys/class/power_supply/BAT*/capacity)%"
-	#if test -z "$onl"
-	#then
-		## suspend when we close the lid
-		##systemctl --user stop inhibit-lid-sleep-on-battery.service
-		#echo -e "${charge}"
-	#else
-		## On mains! no need to suspend
-		##systemctl --user start inhibit-lid-sleep-on-battery.service
-		#echo -e "${charge}"
-	#fi
-	#echo "$(get_battery_charging_status) $(get_battery_combined_percent)%, $(get_time_until_charged )";
-	echo "$(get_battery_charging_status) $(get_battery_combined_percent)%, $(get_time_until_charged )";
+dwm_pulse () {
+    VOL=$(pamixer --get-volume-human | tr -d '%')
+    
+    printf "%s" "$SEP1"
+#    if [ "$IDENTIFIER" = "unicode" ]; then
+        if [ "$VOL" = "muted" ] || [ "$VOL" -eq 0 ]; then
+            printf "🔇"
+        elif [ "$VOL" -gt 0 ] && [ "$VOL" -le 33 ]; then
+            printf "🔈 %s%%" "$VOL"
+        elif [ "$VOL" -gt 33 ] && [ "$VOL" -le 66 ]; then
+            printf "🔉 %s%%" "$VOL"
+        else
+            printf "🔊 %s%%" "$VOL"
+        fi
+#    else
+#        if [ "$VOL" = "muted" ] || [ "$VOL" -eq 0 ]; then
+#            printf "MUTE"
+#        elif [ "$VOL" -gt 0 ] && [ "$VOL" -le 33 ]; then
+#            printf "VOL %s%%" "$VOL"
+#        elif [ "$VOL" -gt 33 ] && [ "$VOL" -le 66 ]; then
+#            printf "VOL %s%%" "$VOL"
+#        else
+#            printf "VOL %s%%" "$VOL"
+#        fi
+#    fi
+    printf "%s\n" "$SEP2"
 }
 
 print_date(){
 	date '+%Y年%m月%d日 %H:%M'
 }
 
-show_record(){
-	test -f /tmp/r2d2 || return
-	rp=$(cat /tmp/r2d2 | awk '{print $2}')
-	size=$(du -h $rp | awk '{print $1}')
-	echo " $size $(basename $rp)"
-}
+#show_record(){
+#	test -f /tmp/r2d2 || return
+#	rp=$(cat /tmp/r2d2 | awk '{print $2}')
+#	size=$(du -h $rp | awk '{print $1}')
+#	echo " $size $(basename $rp)"
+#}
 
 
 LOC=$(readlink -f "$0")
@@ -141,7 +197,7 @@ export IDENTIFIER="unicode"
 #. "$DIR/dwmbar-functions/dwm_battery.sh"
 #. "$DIR/dwmbar-functions/dwm_mail.sh"
 #. "$DIR/dwmbar-functions/dwm_backlight.sh"
-. "$DIR/dwmbar-functions/dwm_alsa.sh"
+#. "$DIR/dwmbar-functions/dwm_alsa.sh"
 #. "$DIR/dwmbar-functions/dwm_pulse.sh"
 #. "$DIR/dwmbar-functions/dwm_weather.sh"
 #. "$DIR/dwmbar-functions/dwm_vpn.sh"
@@ -156,7 +212,7 @@ get_bytes
 vel_recv=$(get_velocity $received_bytes $old_received_bytes $now)
 vel_trans=$(get_velocity $transmitted_bytes $old_transmitted_bytes $now)
 
-xsetroot -name "  💿 $(print_mem)M ⬇️ $vel_recv ⬆️ $vel_trans $(dwm_alsa) [ $(print_bat) ]$(show_record) $(print_date) "
+xsetroot -name "  ⬇️ $vel_recv ⬆️ $vel_trans|$(dwm_pulse)|$(dwm_backlight)|$(dwm_battery)|$(print_date) "
 
 # Update old values to perform new calculations
 old_received_bytes=$received_bytes

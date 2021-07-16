@@ -5,11 +5,11 @@
  *
  * font: see http://freedesktop.org/software/fontconfig/fontconfig-user.html
  */
-static char *font = "Source Code Pro:pixelsize=18:antialias=true:autohint=true";
+static char *font = "SauceCodePro Nerd Font:pixelsize=24:antialias=true:autohint=true";
 /* Spare fonts */
 static char *font2[] = {
-/*	"Source Code Pro:pixelsize=15:antialias=true:autohint=true", */
-/*	"Source Code Pro:pixelsize=15:antialias=true:autohint=true", */
+/*	"SauceCodePro Nerd Font:pixelsize=24:antialias=true:autohint=true", */
+/*	"SauceCodePro Nerd Font:pixelsize=24:antialias=true:autohint=true", */
 };
 
 static int borderpx = 2;
@@ -100,7 +100,8 @@ char *termname = "st-256color";
 unsigned int tabspaces = 8;
 
 /* bg opacity */
-float alpha = 0.8;
+//glass
+float alpha = 0.7;
 
 /* Terminal colors (16 first used in escape sequence) */
 static const char *colorname[] = {
@@ -209,10 +210,10 @@ static Shortcut shortcuts[] = {
 	{ TERMMOD,              XK_Y,           selpaste,       {.i =  0} },
 	{ ShiftMask,            XK_Insert,      selpaste,       {.i =  0} },
 	{ TERMMOD,              XK_Num_Lock,    numlock,        {.i =  0} },
-	{ MODKEY,               XK_Page_Up,     kscrollup,      {.i =  1} },
-	{ MODKEY,               XK_Page_Down,   kscrolldown,    {.i =  1} },
-	{ MODKEY|ControlMask,   XK_Page_Up,     kscrollup,      {.i = -1} },
-	{ MODKEY|ControlMask,   XK_Page_Down,   kscrolldown,    {.i = -1} },
+	{ MODKEY,               XK_k,           kscrollup,      {.i =  1} },
+	{ MODKEY,               XK_j,           kscrolldown,    {.i =  1} },
+	{ MODKEY|ShiftMask,     XK_k,           kscrollup,      {.i = -1} },
+	{ MODKEY|ShiftMask,     XK_j,           kscrolldown,    {.i = -1} },
 };
 
 /*
